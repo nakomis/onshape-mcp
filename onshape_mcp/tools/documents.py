@@ -54,9 +54,13 @@ def get_document(did: str) -> dict:
 
 
 @mcp.tool()
-def create_document(name: str, description: str = "") -> dict:
-    """Create a new Onshape document."""
-    payload: dict = {"name": name}
+def create_document(name: str, description: str = "", is_public: bool = False) -> dict:
+    """
+    Create a new Onshape document.
+
+    is_public: set True for free-tier accounts, which cannot create private documents.
+    """
+    payload: dict = {"name": name, "isPublic": is_public}
     if description:
         payload["description"] = description
     d = post("/api/v10/documents", payload)

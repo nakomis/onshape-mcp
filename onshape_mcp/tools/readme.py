@@ -105,8 +105,13 @@ Replace `SKETCH_FEATURE_ID` with the `featureId` returned when you created the s
 
 **endBound values:**
 - `"BLIND"` — extrude by a fixed depth (requires `depth` quantity)
-- `"THROUGH_ALL"` — cut through all
-- `"SYMMETRIC"` — equal depth both directions
+- `"THROUGH_ALL"` — cut through all (still directional — use `oppositeDirection` to flip)
+
+**To flip the extrude direction**, add:
+```json
+{"btType": "BTMParameterBoolean-144", "parameterId": "oppositeDirection", "value": true}
+```
+Note: `flipDirection` is **not** the correct parameter — it is silently ignored. Use `oppositeDirection`.
 
 ### Fillet (BTMFeature-134, featureType: "fillet")
 

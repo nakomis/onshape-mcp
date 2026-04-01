@@ -16,12 +16,23 @@ import httpx
 BASE_URL = os.environ.get("ONSHAPE_BASE_URL", "https://cad.onshape.com")
 
 
+def _keychain(account: str) -> str:
+    import subprocess
+    result = subprocess.run(
+        ["security", "find-generic-password", "-s", "onshape", "-a", account, "-w"],
+        capture_output=True, text=True,
+    )
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
 def _credentials() -> tuple[str, str]:
-    access_key = os.environ.get("ONSHAPE_ACCESS_KEY", "")
-    secret_key = os.environ.get("ONSHAPE_SECRET_KEY", "")
+    access_key = os.environ.get("ONSHAPE_ACCESS_KEY") or _keychain("access-key")
+    secret_key = os.environ.get("ONSHAPE_SECRET_KEY") or _keychain("secret-key")
     if not access_key or not secret_key:
         raise RuntimeError(
-            "ONSHAPE_ACCESS_KEY and ONSHAPE_SECRET_KEY environment variables must be set"
+            "Onshape credentials not found. Set ONSHAPE_ACCESS_KEY and ONSHAPE_SECRET_KEY "
+            "environment variables, or store them in macOS Keychain under service 'onshape' "
+            "with accounts 'access-key' and 'secret-key'."
         )
     return access_key, secret_key
 

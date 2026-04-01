@@ -308,6 +308,49 @@ for i in range(6):
 
 ---
 
+## Construction Planes (cPlane)
+
+To create a sketch on a plane that doesn't exist yet (e.g. the top face of a prism),
+create a construction plane first, then reference it in the sketch.
+
+### Create an offset cPlane
+
+```json
+{
+  "feature": {
+    "btType": "BTMFeature-134",
+    "name": "My Plane",
+    "featureType": "cPlane",
+    "namespace": "", "suppressed": false,
+    "returnAfterSubfeatures": false, "subFeatures": [], "parameterLibraries": [],
+    "parameters": [
+      {"btType": "BTMParameterEnum-145", "parameterId": "cplaneType", "value": "OFFSET", "enumName": "CPlaneType", "namespace": ""},
+      {"btType": "BTMParameterQueryList-148", "parameterId": "entities", "queries": [{ TOP PLANE QUERY }]},
+      {"btType": "BTMParameterQuantity-147", "parameterId": "offset", "expression": "21 mm", "value": 0.021, "isInteger": false, "units": "meter"}
+    ]
+  }
+}
+```
+
+### Reference the cPlane in a sketch
+
+The sketch's `sketchPlane` query uses a compressed queryString. The pattern for a
+cPlane with featureId `{ID}` (where `{ID}` is 17 characters long) is:
+
+```
+query=qCompressed(1.0,"%B5$QueryM4Sa$entityTypeBa$EntityTypeS4$FACESb$historyTypeS8$CREATIONSb$operationIdB2$IdA1S11.7${ID}planeOpS9$queryTypeS5$DUMMY",id);
+```
+
+The `S11` prefix is correct for 17-character feature IDs (all Onshape-generated IDs
+that look like `FAxgVH0UsDn5xsH_1`). The built-in Top plane uses `S3.7$TopplaneOp`.
+
+In Python:
+```python
+cplane_qs = f'query=qCompressed(1.0,"%B5$QueryM4Sa$entityTypeBa$EntityTypeS4$FACESb$historyTypeS8$CREATIONSb$operationIdB2$IdA1S11.7${cplane_fid}planeOpS9$queryTypeS5$DUMMY",id);'
+```
+
+---
+
 ## Checking Your Work
 
 - `get_part_studio_mass_properties` — volume is in m³; multiply by 1e6 to get cm³

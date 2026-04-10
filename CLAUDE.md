@@ -42,6 +42,8 @@ selection in extrudes — use `BTMIndividualQuery-138` with the `qSketchRegion` 
 (e.g. edge 0 `endPointId="p1"`, edge 1 `startPointId="p1"`). No explicit COINCIDENT
 constraints are needed — Onshape recognises shared point IDs automatically.
 
+**Flipping extrude direction**: Use `oppositeDirection: true`, NOT `flipDirection: true`. The `flipDirection` parameter is silently accepted by the API but has no effect. `oppositeDirection` is what the Onshape UI's double-arrow "Flip Direction" button sets.
+
 **Feature status check**: The response includes `featureState.featureStatus`.
 `"OK"` means success; `"ERROR"` means something is wrong. Always check this.
 

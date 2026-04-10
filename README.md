@@ -6,7 +6,7 @@ MCP server for the [Onshape](https://www.onshape.com) CAD API. Gives Claude 51 t
 
 If you find this useful, please consider buying me a coffee:
 
-[![Donate with PayPal](https://www.paypalobjects.com/en_GB/i/btn/btn_donate_SM.gif)](https://www.paypal.com/donate?hosted_button_id=Q3BESC73EWVNN)
+[![Donate with PayPal](https://www.paypalobjects.com/en_GB/i/btn/btn_donate_SM.gif)](https://www.paypal.com/donate?hosted_button_id=Q3BESC73EWVNN&custom=onshape-mcp)
 
 ## Tools
 

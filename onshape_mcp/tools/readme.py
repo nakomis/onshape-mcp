@@ -105,8 +105,26 @@ Replace `SKETCH_FEATURE_ID` with the `featureId` returned when you created the s
 
 **endBound values:**
 - `"BLIND"` — extrude by a fixed depth (requires `depth` quantity)
-- `"THROUGH_ALL"` — cut through all
-- `"SYMMETRIC"` — equal depth both directions
+- `"THROUGH_ALL"` — cut through all (still directional — use `oppositeDirection` to flip)
+
+**To flip the extrude direction**, add:
+```json
+{"btType": "BTMParameterBoolean-144", "parameterId": "oppositeDirection", "value": true}
+```
+⚠️ `flipDirection` is **NOT** the correct parameter — it is silently accepted by the API but
+has no effect. The correct parameter is `oppositeDirection`. This maps to the Onshape UI's
+double-arrow "Flip Direction" button.
+
+**Merge scope for REMOVE (cut) operations:**
+By default (`defaultScope: true`) the cut applies to all modifiable solid bodies.
+If you need a specific scope, set `defaultScope: false` and add a `booleanScope` query list.
+```json
+{"btType": "BTMParameterBoolean-144", "parameterId": "defaultScope", "value": true}
+```
+
+**`featureStatus: "INFO"` on a REMOVE extrude** usually means "Selected tools and targets
+do not intersect" — i.e., the extrude is going in the wrong direction. Add
+`oppositeDirection: true`.
 
 ### Fillet (BTMFeature-134, featureType: "fillet")
 
@@ -351,13 +369,42 @@ cplane_qs = f'query=qCompressed(1.0,"%B5$QueryM4Sa$entityTypeBa$EntityTypeS4$FAC
 
 ---
 
+## Updating Existing Features
+
+`update_part_studio_feature(did, wid, eid, fid, feature)` takes the **same**
+`{"feature": {...}}` wrapper as `add_part_studio_feature`. The `fid` parameter is
+the `featureId` of the feature to update (from `get_part_studio_features`).
+
+The best workflow for debugging a feature is:
+1. Call `get_part_studio_features` to see the current full parameter set
+2. Modify the specific parameters you want to change
+3. Re-submit with the same `{"feature": {...}}` wrapper
+
+---
+
+## Debugging Checklist
+
+- `featureStatus: "OK"` — feature applied successfully
+- `featureStatus: "INFO"` on REMOVE extrude → "tools and targets do not intersect"
+  → add `{"parameterId": "oppositeDirection", "value": true}`
+- `featureStatus: "ERROR"` — bad entity query (wrong featureId, wrong entity type)
+  or an open/unclosed sketch profile
+- Volume unchanged after a REMOVE → check featureStatus; INFO means the cut missed
+- `get_part_studio_mass_properties` — volume is in m³; multiply by 1e6 to get cm³
+- `get_part_studio_body_details` — lists faces/edges, useful for geometry debugging
+- `get_part_studio_features` — returns full feature tree with all current parameters;
+  use this to reverse-engineer what the Onshape UI is sending when you make a manual
+  change (e.g. clicking "Flip Direction" and then inspecting the result is how
+  `oppositeDirection` was discovered)
+
+---
+
 ## Checking Your Work
 
 - `get_part_studio_mass_properties` — volume is in m³; multiply by 1e6 to get cm³
 - `get_part_studio_body_details` — lists faces/edges, useful for debugging
 - `get_part_studio_features` — returns full feature tree; check `featureStatus: "OK"`
-- `featureStatus: "ERROR"` usually means a bad entity query (wrong featureId, wrong
-  entity type) or an open/unclosed sketch profile
+- Volume in m³ × 1,000,000 = cm³. A ~10cm³ printable token needs R≈13.5mm, H≈21mm hex prism.
 """
 
 

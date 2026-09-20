@@ -71,6 +71,23 @@ what you would guess:
 Always confirm by exporting and checking the bounding box; a part built on the
 wrong side of a plane still reports OK.
 
+## Make cuts robust
+
+Cuts written against today's geometry break silently when that geometry moves,
+and the feature still reports OK.
+
+- **Use `endBound: "THROUGH_ALL"` (or `"UP_TO_NEXT"`) for cuts**, not `BLIND`
+  with a measured depth. This is the native Onshape habit and it survives a
+  part getting thicker or moving.
+- **Oversize the cut profile in-plane too.** Through All only governs the
+  extrude direction; a sketch rectangle sized to the current thickness will
+  under-cut as soon as that thickness changes. Run the profile well past the
+  material on both sides.
+- After moving any body, re-check every feature that referenced its old
+  position. Moving a post 3.2mm outboard left a slot cut behind: the slot
+  stopped 2mm short of the outer face, so the screw could not pass, and
+  nothing reported an error.
+
 ## Booleans
 
 - **`featureType: "boolean"` is rejected with HTTP 400** in the shape the docs

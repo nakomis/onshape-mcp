@@ -72,7 +72,8 @@ def get_part_studio_bounding_boxes(did: str, wid: str, eid: str) -> dict:
 @mcp.tool()
 def get_parts_in_part_studio(did: str, wid: str, eid: str) -> list[dict]:
     """List all parts in a Part Studio with their IDs and names."""
-    result = get(f"/api/v6/partstudios/d/{did}/w/{wid}/e/{eid}/parts")
+    # /partstudios/.../parts is a 404 — parts live under their own /parts route.
+    result = get(f"/api/v6/parts/d/{did}/w/{wid}/e/{eid}")
     parts = result if isinstance(result, list) else result.get("parts", [])
     return [
         {

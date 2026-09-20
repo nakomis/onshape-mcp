@@ -9,7 +9,7 @@ import string
 import tempfile
 import time
 from datetime import datetime, timezone
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 import httpx
 
@@ -87,6 +87,11 @@ def _request(
     headers = _make_headers(method.upper(), path, query, content_type)
     url = f"{BASE_URL}{path}"
 
+    # The export endpoints (STL/STEP/Parasolid/glTF) answer 307 with a location
+    # on a regional host (cad-euw1.onshape.com and friends). httpx will not
+    # follow it by default, and following it blindly fails too: the Onshape
+    # HMAC signature covers the path and query, so the redirect target needs a
+    # freshly signed header rather than a replay of the original one.
     with httpx.Client(timeout=30) as client:
         resp = client.request(
             method=method.upper(),
@@ -95,6 +100,17 @@ def _request(
             params=params,
             json=json,
         )
+        if resp.status_code in (301, 302, 303, 307, 308) and "location" in resp.headers:
+            target = urlparse(resp.headers["location"])
+            redirect_headers = _make_headers(
+                method.upper(), target.path, target.query, content_type
+            )
+            resp = client.request(
+                method=method.upper(),
+                url=resp.headers["location"],
+                headers=redirect_headers,
+                json=json,
+            )
         resp.raise_for_status()
         if binary:
             return resp.content

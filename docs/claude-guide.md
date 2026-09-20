@@ -98,6 +98,18 @@ wrong side of a plane still reports OK.
   measuring a single part from a multi-body studio means filtering by
   coordinates. Export per part with `part_id` when you need them separately.
 
+## Verifying assemblies, not just parts
+
+Measuring one part is not enough: parts can be individually correct and still
+wrong together. A slot cut in one body ran directly under the wall of the body
+that stands on it, leaving the wall overhanging fresh air — every feature
+reported OK and every dimension was as drawn. Compare footprints between
+bodies (project each to x/y and check overlaps) and walk the moving part
+through its full travel looking for collisions with the fixed one.
+
+The human spotted this one by looking at the model. Ask for a look when the
+geometry is an assembly.
+
 ## Verifying without eyes
 
 - `get_part_studio_bounding_boxes` — overall extent, cheap sanity check.

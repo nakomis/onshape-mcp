@@ -22,12 +22,26 @@ Arithmetic on the expected volume catches this quickly: compute what the part
 `qSketchRegion(id + "FEATURE_ID", filterInnerLoops)` is the query every extrude
 uses, and it is the single biggest source of silent failure.
 
-- **Full circles never produce a region** through this API. A
-  `BTCurveGeometryCircle-115` with `startParam: 0, endParam: 2π` is accepted,
-  the sketch reports OK, and the extrude comes back `ERROR` with
-  `deterministicIds: []`. Tried with and without `startPointId`/`endPointId`,
-  and with an explicit `BTMSketchPoint-158` centre. **Use a polygon of line
-  segments instead** — an octagon is fine for a peg or a screw hole, and for a
+- **Full circles need `BTMSketchCurve-4`, not `BTMSketchCurveSegment-155`.**
+  The single biggest trap. `-155` is a curve *segment* — lines and arcs. A full
+  circle is a *curve*. Written as `-155` it is accepted, the sketch reports OK,
+  and every extrude of it fails with `deterministicIds: []`; written as `-4` it
+  just works (verified by round-tripping a circle drawn in the UI):
+
+  ```json
+  {"btType": "BTMSketchCurve-4", "entityId": "hole", "centerId": "hole.center",
+   "isConstruction": false, "isFromSplineHandle": false,
+   "isFromSplineControlPolygon": false, "isFromEndpointSplineHandle": false,
+   "internalIds": [], "curvedTextIds": [], "namespace": "", "name": "",
+   "index": 1, "parameters": [],
+   "geometry": {"btType": "BTCurveGeometryCircle-115", "radius": 0.004,
+                "clockwise": false, "xCenter": 0.05, "yCenter": 0.05,
+                "xDir": 1.0, "yDir": 0.0}}
+  ```
+
+  No `startPointId`/`endPointId`, no `startParam`/`endParam`. Do **not** fall
+  back to polygons: an octagonal screw hole concentrates stress at its corners
+  and a self-tapping screw split the printed part along them.
   clearance hole you size it across corners.
 - **A sketch whose profile sits inside existing material often yields no
   region.** Sketch a hole on a plane that is already buried in a solid and the
@@ -44,6 +58,17 @@ uses, and it is the single biggest source of silent failure.
   into the outline is a single closed loop with no inner loop at all, so none
   of the above can bite. On a bracket it is often the better part anyway (the
   screw slides in without being removed).
+
+## When something will not work, read back what the UI writes
+
+The fastest way out of a dead end: make the feature by hand in the Onshape UI,
+then call `get_part_studio_features` and read the JSON it produced. That is how
+the circle entity type above was found, after three failed workarounds.
+
+UI-made features often carry **compressed edge/face queries**
+(`qCompressed(1.0,"&316$eJx9U...")`) which are opaque and not worth
+reconstructing; for API-built features use
+`qCreatedBy(id + "FEATURE_ID", EntityType.EDGE)` instead.
 
 ## Plane queries
 

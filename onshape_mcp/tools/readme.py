@@ -408,10 +408,23 @@ The best workflow for debugging a feature is:
 """
 
 
+def _claude_guide() -> str:
+    """Claude's own notes (docs/claude-guide.md), if they are still alongside."""
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[2] / "docs" / "claude-guide.md"
+    try:
+        return "\n\n---\n\n" + path.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+
+
 @mcp.tool()
 def get_3d_modelling_guide() -> str:
     """
-    Returns a comprehensive guide for building 3D geometry programmatically via this MCP.
+    Returns a comprehensive guide for building 3D geometry programmatically via this MCP,
+    followed by "Claude's guide to the Onshape MCP" (docs/claude-guide.md) — the silent
+    failure modes worth knowing before you build anything. Read both.
 
     Covers:
     - Account constraints (free vs paid)
@@ -423,4 +436,4 @@ def get_3d_modelling_guide() -> str:
     - Common patterns (hexagonal prism, closed polygons)
     - How to check and debug features
     """
-    return _GUIDE
+    return _GUIDE + _claude_guide()

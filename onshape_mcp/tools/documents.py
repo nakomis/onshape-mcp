@@ -47,6 +47,7 @@ def get_document(did: str) -> dict:
         "description": d.get("description", ""),
         "owner": d.get("owner", {}).get("name", ""),
         "defaultWorkspace": d.get("defaultWorkspace", {}).get("id", ""),
+        "public": d.get("public"),
         "createdAt": d.get("createdAt", ""),
         "modifiedAt": d.get("modifiedAt", ""),
         "href": d.get("href", ""),
@@ -134,3 +135,22 @@ def list_workspaces(did: str) -> list[dict]:
         {"id": w["id"], "name": w["name"], "isReadOnly": w.get("isReadOnly", False)}
         for w in workspaces
     ]
+
+
+@mcp.tool()
+def copy_element(did: str, wid: str, source_did: str, source_wid: str, source_eid: str) -> dict:
+    """
+    Copy a tab (Part Studio, Assembly, ...) from another document into this workspace.
+
+    The copy is independent of the source: its features stay editable and later changes to
+    the source don't reach it. Returns the new element's id and name.
+    """
+    r = post(
+        f"/api/v10/elements/copyelement/{did}/workspace/{wid}",
+        {
+            "documentIdSource": source_did,
+            "workspaceIdSource": source_wid,
+            "elementIdSource": source_eid,
+        },
+    )
+    return {"id": r.get("id", ""), "name": r.get("name", ""), "elementType": r.get("elementType", "")}

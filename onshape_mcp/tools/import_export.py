@@ -236,41 +236,48 @@ def import_file(
     did: str,
     wid: str,
     file_path: str,
+    unit: str = "millimeter",
+    y_axis_is_up: bool = False,
     allow_faulty_parts: bool = False,
-    import_in_background: bool = False,
 ) -> dict:
     """
-    Import a CAD file into an Onshape document as a new element.
+    Import a CAD file into an Onshape document, translated into a new Part Studio (or assembly).
 
     file_path: absolute path to the local file to upload.
     Supported formats include STEP, IGES, STL, OBJ, DXF, DWG, Parasolid, ACIS, and others.
-    Returns translation job info including the translation ID for status polling.
+    unit: the file's units, for unitless formats such as STL and OBJ.
+    Waits for the translation and returns its state and the new element IDs. An STL or OBJ
+    only becomes a file (BLOB) tab, not a Part Studio, and a mesh can't take solid booleans
+    anyway: if the shape exists in Onshape, copy its Part Studio (copy_element) instead.
     """
-    from urllib.parse import urlencode
+    from onshape_mcp.client import _credentials, poll_translation
 
-    filename = os.path.basename(file_path)
-    params_dict = {
+    path = f"/api/v10/translations/d/{did}/w/{wid}"
+    data = {
         "storeInDocument": "true",
+        "translate": "true",
+        "unit": unit,
+        "yAxisIsUp": str(y_axis_is_up).lower(),
         "allowFaultyParts": str(allow_faulty_parts).lower(),
-        "importInBackground": str(import_in_background).lower(),
     }
-    query = urlencode(params_dict)
-    path = f"/api/v10/documents/d/{did}/w/{wid}/blobs/translationFormats"
-    headers = _make_headers("POST", path, query, "")
-    # Remove Content-Type — let httpx set it for multipart
-    headers.pop("Content-Type", None)
-    headers["Accept"] = "application/json;charset=UTF-8; qs=0.09"
-
-    url = f"{BASE_URL}{path}"
     with open(file_path, "rb") as f:
         file_data = f.read()
-
-    with httpx.Client(timeout=60) as client:
+    # Basic auth: the HMAC signature covers the Content-Type, and a multipart body's
+    # boundary isn't known until httpx builds the request.
+    with httpx.Client(timeout=120) as client:
         resp = client.post(
-            url,
-            headers=headers,
-            params=params_dict,
-            files={"file": (filename, file_data)},
+            f"{BASE_URL}{path}",
+            auth=_credentials(),
+            headers={"Accept": "application/json"},
+            data=data,
+            files={"file": (os.path.basename(file_path), file_data)},
         )
         resp.raise_for_status()
-        return resp.json()
+        job = resp.json()
+    done = poll_translation(job["id"])
+    return {
+        "translationId": job["id"],
+        "requestState": done.get("requestState"),
+        "failureReason": done.get("failureReason"),
+        "resultElementIds": done.get("resultElementIds"),
+    }
